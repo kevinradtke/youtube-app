@@ -1,5 +1,8 @@
 
 let apiKey = "AIzaSyBMuiP0cMmLEgT4-f2yHfJatdWxYmRHPB0"
+var search = ""
+var nextT = ""
+var prevT = ""
 
 function handleFetch(q, callback) {
     $.ajax({
@@ -8,6 +11,22 @@ function handleFetch(q, callback) {
         data: {
             key : apiKey,
             q : q
+        },
+        dataType: "json",
+        success: responseJson => callback(responseJson),
+        error : err => console.log(err)
+    })
+    search = q
+}
+
+function handleManageRes(callback, pToken) {
+    $.ajax({
+        url: "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10",
+        method: "GET",
+        data: {
+            key : apiKey,
+            q : search,
+            pageToken: pToken
         },
         dataType: "json",
         success: responseJson => callback(responseJson),
@@ -30,20 +49,32 @@ function displayResults(data) {
             </a>
         `)
     })
-    $('.results').append(`
-        <div class = "moreResultsDiv">
-            <button class="resButton" id="prevres" type="button">Previous Results</button>
-            <button class="resButton" id="nextres" type="button">Next Results</button>
-        </div>
-    `)
+    if (data.prevPageToken) {
+        $('.results').append(`
+            <div class="moreResultsDiv">
+                <button class="resButton" id="prevres" type="button">Previous Results</button>
+                <button class="resButton" id="nextres" type="button">Next Results</button>
+            </div>
+        `)
+        prevT = data.prevPageToken
+        nextT = data.nextPageToken
+    }
+    else {
+        $('.results').append(`
+            <div class="moreResultsDiv">
+                <button class="resButton" id="nextres" type="button">Next Results</button>
+            </div>
+        `)
+        nextT = data.nextPageToken
+    }
 }
 
 $('.results').on("click","#prevres", function(event){
-    console.log("previous results")
+    handleManageRes(displayResults, prevT)
 })
 
 $('.results').on("click","#nextres", function(event){
-    console.log("next results")
+    handleManageRes(displayResults, nextT)
 })
 
 function watchForm() {
